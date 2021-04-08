@@ -1,0 +1,112 @@
+plugins {
+  id 'java'
+  id 'java-library'
+  id 'org.asciidoctor.jvm.convert' version '3.3.0'
+  id 'org.asciidoctor.jvm.pdf' version '3.3.0'
+  id 'org.asciidoctor.jvm.epub' version '3.3.0'
+}
+
+group 'org.test'
+version '1.0.0'
+
+java {
+  toolchain {
+    languageVersion = JavaLanguageVersion.of(8)
+  }
+}
+
+ext {
+  indexFileName = 'index.adoc'
+  springAsciidoctorVersion = '0.0.1-M1'
+}
+
+repositories {
+  maven { url 'https://maven.aliyun.com/repository/central' }
+  mavenCentral()
+  maven {
+    url "https://repo.spring.io/milestone"
+  }
+  maven {
+    url "https://repo.spring.io/release"
+  }
+}
+
+configurations {
+  asciidoctorExtensions
+}
+
+dependencies {
+  asciidoctorExtensions "io.spring.asciidoctor.backends:spring-asciidoctor-backends:${springAsciidoctorVersion}"
+}
+
+test {
+}
+
+asciidoctor {
+  baseDirFollowsSourceDir()
+  sources {
+    include project.ext.indexFileName
+  }
+  resources {
+    from(sourceDir) {
+      include 'images/**'
+    }
+  }
+  outputDir file("$buildDir/asciidoc")
+  configurations "asciidoctorExtensions"
+  outputOptions {
+    backends "spring-html"
+  }
+}
+
+asciidoctor.doLast {
+  delete file("$buildDir/asciidoc/img/banner-logo.svg")
+  copy {
+    from file("$buildDir/asciidoc/images/banner-logo.svg")
+    into file("$buildDir/asciidoc/img")
+  }
+}
+
+asciidoctorj {
+  options header_footer: true
+  attributes 'icons@': 'font'
+}
+
+asciidoctorPdf {
+  baseDirFollowsSourceDir()
+  sources {
+    include project.ext.indexFileName
+  }
+  resources {
+    from(sourceDir) {
+      include 'images/**'
+    }
+  }
+  outputDir file("$buildDir/asciidoc")
+}
+
+asciidoctorEpub {
+  ebookFormats(EPUB3)
+  baseDirFollowsSourceDir()
+  sources {
+    include project.ext.indexFileName
+  }
+  resources {
+    from(sourceDir) {
+      include 'images/**'
+    }
+  }
+  outputDir file("$buildDir/asciidoc")
+}
+
+task tarIndexPage(type: Tar) {
+  description '打包 html 及 pdf'
+
+  dependsOn asciidoctor, asciidoctorPdf
+
+  archiveFileName = "index.tar.gz"
+  destinationDirectory = file("$buildDir/dist")
+  compression = Compression.GZIP
+
+  from "$buildDir/asciidoc"
+}

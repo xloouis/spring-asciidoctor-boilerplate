@@ -1,0 +1,9 @@
+= spring-asciidoctor-boilerplate
+
+入口 link:src/docs/asciidoc/index.adoc[index.adoc]
+
+.打包
+[source,shell script]
+----
+$ ./gradlew clean tarIndexPage
+----
